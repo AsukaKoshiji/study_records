@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.database import SessionLocal
@@ -59,6 +59,12 @@ def get_study_record(
         StudyRecord.id == record_id
     ).first()
 
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Study record not found"
+        )
+
     return record
 
 
@@ -71,6 +77,12 @@ def update_study_record(
     update_record = db.query(StudyRecord).filter(
         StudyRecord.id == record_id
     ).first()
+
+    if update_record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Study record not found"
+        )
 
     update_record.title = record.title
     update_record.content = record.content
@@ -94,6 +106,12 @@ def delete_study_record(
     delete_record = db.query(StudyRecord).filter(
         StudyRecord.id == record_id
     ).first()
+
+    if delete_record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Study record not found"
+        )
 
     db.delete(delete_record)
     db.commit()
