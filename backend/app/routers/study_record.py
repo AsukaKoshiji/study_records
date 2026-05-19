@@ -34,4 +34,12 @@ def create_study_record(
 
     return {
         "message": "study record created"
-        }
+    }
+
+@router.get("/study_records/")
+def get_study_records(
+    db: Session = Depends(get_db)
+):
+    records = db.query(StudyRecord).all()
+
+    return records
