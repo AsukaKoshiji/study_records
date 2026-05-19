@@ -84,3 +84,20 @@ def update_study_record(
     return {
         "message": "study record updated"
     }
+
+
+@router.delete("/study-records/{record_id}")
+def delete_study_record(
+    record_id: int,
+    db: Session = Depends(get_db)
+):
+    delete_record = db.query(StudyRecord).filter(
+        StudyRecord.id == record_id
+    ).first()
+
+    db.delete(delete_record)
+    db.commit()
+
+    return {
+        "message": "study record deleted"
+    }
