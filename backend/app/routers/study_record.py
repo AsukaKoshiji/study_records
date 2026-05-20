@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.database.database import SessionLocal
 from app.models.study_record import StudyRecord
@@ -123,3 +124,19 @@ def delete_study_record(
     return {
         "message": "study record deleted"
     }
+
+
+@router.get("/progress")
+def get_progress(
+    db: Session = Depends(get_db)
+):
+    total_study_time = db.query(
+        func.sum(StudyRecord.study_time)
+    ).scalar()
+
+    if total_study_time is None:
+        total_study_time = 0
+
+        return {
+            "total_study_time": total_study_time
+        }
