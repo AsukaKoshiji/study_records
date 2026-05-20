@@ -3,11 +3,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database.database import SessionLocal
+
 from app.models.study_record import StudyRecord
+from app.models.study_goal import StudyGoal
+
 from app.schemas.study_record import (
     StudyRecordCreate,
     StudyRecordUpdate
 )
+
 from datetime import date
 
 router = APIRouter()
@@ -137,6 +141,20 @@ def get_progress(
     if total_study_time is None:
         total_study_time = 0
 
+        goal = db.query(StudyGoal).first()
+
+        if goal is None:
+            return(
+                "total_study_time": total_sstudy_time,
+                "target_hours": 0,
+                "achievement_rate": 0
+            )
+        achievement_rate = (
+            total_study_time / goal.target_hours
+            ) * 100
+
         return {
-            "total_study_time": total_study_time
+            "total_study_time": total_study_time,
+            "target_hours": goal.target_hours,
+            "achievement_rate": round(acchievement_rate, 2)
         }
