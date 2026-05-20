@@ -1,135 +1,98 @@
-# テスト設計書
+## テスト設計書
 
 ## 1. 目的
-
-本テスト設計書は、TODOアプリ（学習記録アプリを含む）の品質を担保するために、
-単体テストおよび結合テストの観点・範囲・方法を定義する。
-
+本テスト設計書は、学習記録・目標設定アプリの品質を担保するために、単体テストおよび結合テストの観点・範囲・方法を定義する。
 API・DB・ビジネスロジックの整合性を確認し、機能追加時のリグレッション防止を目的とする。
 
 ---
 
 ## 2. 対象範囲
 
-本テストの対象は以下とする。
+### 2.1 API機能（結合テスト対象）
+- 学習記録一覧取得・新規作成（GET/POST `/api/study-records`）
+- 学習記録詳細取得・更新・削除（GET/PUT/DELETE `/api/study-records/{id}`）
+- 学習記録日付検索（GET `/api/study-records/date/{study_date}`）
+- 目標設定一覧取得・新規作成（GET/POST `/api/study-goals`）
+- 目標設定詳細取得・更新・削除（GET/PUT/DELETE `/api/study-goals/{id}`）
+- 進捗状況集計（GET `/api/study-records/progress`）
 
-### 2.1 API機能
-- TODO作成（POST /todos）
-- TODO一覧取得（GET /todos）
-- TODO詳細取得（GET /todos/{id}）
-- TODO更新（PUT /todos/{id}）
-- TODO削除（DELETE /todos/{id}）
-
-### 2.2 ビジネスロジック
-- TODOのバリデーション処理
-- ステータス管理（todo / doing / done など）
-- データ整形処理
+### 2.2 ビジネスロジック（単体テスト対象）
+- 総学習時間の集計処理（SUM）
+- 目標設定に基づく達成率計算ロジック（0除算・目標未設定時のハンドリング含む）
 
 ### 2.3 DB操作
-- SQLAlchemyを用いたCRUD処理
-- テーブル制約（NOT NULL / UNIQUE）
+- SQLAlchemyを用いたSQLite（in-memory）へのCRUD処理
+- テーブル制約（NOT NULL / 型バリデーション）の検証
 
 ---
 
 ## 3. テスト種別
 
 ### 3.1 単体テスト（Unit Test）
-
 #### 目的
-各関数・クラス単位のロジックが正しく動作することを確認する。
-
-#### 対象
-- サービス層（CRUDロジック）
-- バリデーション関数
-- 状態変換ロジック
-
+FastAPIや外部接続から切り離し、純粋な集計・計算ロジックの正しさを関数単位で検証する。
 #### 例
-- 正常な入力でTODOオブジェクトが生成される
-- 不正なタイトル（空文字など）で例外が発生する
-- ステータス変更が正しく反映される
-
----
+- 目標設定が存在しない場合、達成率が `0.0` として安全に返ること。
+- 目標時間が `0` の場合、0除算エラーを起こさずに `0.0` が返ること。
 
 ### 3.2 結合テスト（Integration Test）
-
 #### 目的
-API・DB・サービス層の連携が正しく動作することを確認する。
-
-#### 対象
-- FastAPIエンドポイント
-- SQLAlchemyセッション
-- DBスキーマ
-
+FastAPIエンドポイント、Pydanticスキーマ、SQLAlchemyセッションが連携し、HTTPリクエストに対してDBが正しく不整合なく操作されるかを確認する。
 #### 例
-- POST /todos 実行後、DBにレコードが保存される
-- GET /todos で保存データが取得できる
-- DELETE /todos/{id} でDBから削除される
+- POST実行後、自動採番された `id` を含むレスポンスが201で返ること。
+- データを削除した後、同じIDでGETリクエストを送ると正しく404エラーになること。
 
 ---
 
 ## 4. テスト観点
 
 ### 4.1 正常系
-- TODO作成が成功する
-- TODO一覧が取得できる
-- TODO更新が成功する
-- TODO削除が成功する
-
----
+- 各リソース（記録・目標）の作成・取得・更新・削除が期待通りのステータスコード（200/201）で成功すること。
 
 ### 4.2 異常系
-- 空タイトルで作成 → 400エラー
-- 存在しないIDで更新 → 404エラー
-- 存在しないIDで削除 → 404エラー
-- 不正なJSON形式 → 422エラー
-
----
-
-### 4.3 境界値
-- タイトル最大長チェック
-- 空文字 / null の入力
-- ステータス不正値
+- 存在しないIDに対する更新・削除・取得リクエストが適切に `404 Not Found` になること。
+- Pydanticのバリデーション制約（空文字、文字数超過、負の学習時間など）に違反した際、適切に `422 Unprocessable Entity` になること。
 
 ---
 
 ## 5. テストデータ設計
-
-### 初期データ例
-
-| id | title   | status |
-|----|--------|--------|
-| 1  | task A | todo   |
-| 2  | task B | done   |
-
-### 備考
-- テストごとにデータはリセットする
-- 依存関係を避けるためテスト間共有は禁止
+- **データの独立性:** 各テストケースは独立したトランザクションで実行され、終了時に自動的にロールバック（リセット）される。
+- **データ干渉の防止:** テスト間でのデータ干渉を一切排除し、常にクリーンな状態から検証を開始する。
 
 ---
 
 ## 6. テスト環境
-
-- Python: 3.10+
-- フレームワーク: pytest
-- APIテスト: FastAPI TestClient
-- ORM: SQLAlchemy
-- テストDB:
-  - SQLite（in-memory または test DB）
-  - または専用MySQL test database
+- **Language:** Python 3.12
+- **Framework:** pytest
+- **HTTP Client:** FastAPI TestClient (starlette)
+- **ORM:** SQLAlchemy
+- **Test DB:** SQLite (in-memory)
 
 ---
 
 ## 7. モック方針
-
-### モック対象
-- 外部API（将来連携時）
-- 時刻依存処理（datetime）
-
-### モック不要
-- DB操作（基本は結合テストで実施）
+- **DB操作:** モック化せず、インメモリのSQLiteを用いて実際のクエリを発行して担保する。
+- **FastAPI依存関係:** `Depends(get_db)` を、テスト用に用意した自動ロールバック機能付きのSQLiteセッションへと強制的に上書き（dependency_overrides）する。
 
 ---
 
-## 8. テスト構成
+## 8. テスト構成（実際のディレクトリ構造）
 
-推奨ディレクトリ構成：
+プロジェクトで実際に構築した完全なテスト配置は以下の通りである。
+
+```text
+study_records/
+├── backend/
+│   └── app/
+│       ├── main.py                    # アプリ本体
+│       ├── database/database.py       # Base, engine定義
+│       ├── models/                    # ORMモデル定義
+│       ├── routers/                   # APIエンドポイント
+│       └── schemas/                   # Pydanticバリデーション
+└── tests/
+    ├── conftest.py                    # 【最重要】インメモリDB・Clientのセットアップ、モデル強制登録
+    ├── unit/
+    │   └── test_progress.py           # Progress集計ロジックの単体テスト（3ケース）
+    └── integration/
+        ├── test_api_study_record.py   # 学習記録APIの結合テスト（8ケース）
+        └── test_api_study_goal.py     # 目標設定APIの結合テスト（6ケース）

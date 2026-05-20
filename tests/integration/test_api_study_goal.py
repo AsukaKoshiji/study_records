@@ -8,9 +8,6 @@ from backend.app.main import app
 from backend.app.database.database import Base, SessionLocal
 from backend.app.routers.study_record import get_db
 
-# 🛑 【超重要】ここが動かない原因のすべてでした。
-# クラス名（StudyRecord, StudyGoal）まで個別に直接インポートを明示します。
-# これにより、Base.metadata.create_all を呼んだ瞬間に、SQLite上に2つのテーブルが100%強制生成されます。
 from backend.app.models.study_record import StudyRecord
 from backend.app.models.study_goal import StudyGoal
 
