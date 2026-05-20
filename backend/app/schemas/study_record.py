@@ -1,44 +1,58 @@
-from pydantic import BaseModel, Field
 from datetime import date
- 
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class StudyRecordCreate(BaseModel):
-     title: str = Field(
-          max_length=255,  #255文字まで入力できる
-     )
+# =========================================================
+# Base Schema
+# =========================================================
 
-     content: str
+class StudyRecordBase(BaseModel):
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+    )
 
-     study_time: int = Field(
-          gt = 0.  #0より大きい数値でなければならない
-     )
+    content: str = Field(
+        ...,
+        min_length=1,
+    )
 
-     study_date: date
+    study_time: int = Field(
+        ...,
+        ge=0,
+    )
 
-     memo: str | None = Field(
-          default=None,
-          max_length=1000 #1000文字まで
-     )    #入力しなくてもいいようにするため、Noneを許容する
+    study_date: date
 
-
-class StudyRecordUpdate(BaseModel):
-     title: str = Field(
-          max_length=255,
-     )
-
-     content: str
-
-     study_time: int = Field(
-          gt=0
-     )
-
-     study_date: date
-
-     memo: str | None = Field(
-          default=None,
-          max_length=1000
-     )
+    memo: Optional[str] = None
 
 
-     
+# =========================================================
+# Create Schema
+# =========================================================
+
+class StudyRecordCreate(StudyRecordBase):
+    pass
+
+
+# =========================================================
+# Update Schema
+# =========================================================
+
+class StudyRecordUpdate(StudyRecordBase):
+    pass
+
+
+# =========================================================
+# Response Schema
+# =========================================================
+
+class StudyRecordResponse(StudyRecordBase):
+    id: int
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )

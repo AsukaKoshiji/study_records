@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 
+// APIのベースURLを共通化（ポート変更や本番環境への移行を楽にするため）
+const API_URL = "http://localhost:8000"
+
 type StudyRecord = {
   id: number
   title: string
@@ -19,7 +22,7 @@ type StudyGoal = {
 
 function App() {
   // =====================
-  // Records
+  // Records State
   // =====================
   const [records, setRecords] = useState<StudyRecord[]>([])
 
@@ -32,7 +35,7 @@ function App() {
   const [editingId, setEditingId] = useState<number | null>(null)
 
   // =====================
-  // Goals
+  // Goals State
   // =====================
   const [goals, setGoals] = useState<StudyGoal[]>([])
 
@@ -42,20 +45,21 @@ function App() {
   const [editingGoalId, setEditingGoalId] = useState<number | null>(null)
 
   // =====================
-  // Progress
+  // Progress State（バックエンドの型に合わせて安全に修正）
   // =====================
   const [progress, setProgress] = useState({
     total_study_time: 0,
+    target_hours: 0,
     achievement_rate: 0
   })
 
   // =====================
-  // Calendar
+  // Calendar State
   // =====================
   const [selectedDate, setSelectedDate] = useState("")
 
   // =====================
-  // Init
+  // 初期データ取得
   // =====================
   useEffect(() => {
     fetchRecords()
@@ -68,16 +72,16 @@ function App() {
   // =====================
   const fetchRecords = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/study-records")
+      const res = await axios.get(`${API_URL}/study-records`)
       setRecords(res.data)
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
   const createRecord = async () => {
     try {
-      await axios.post("http://localhost:8000/study-records", {
+      await axios.post(`${API_URL}/study-records`, {
         title,
         content,
         study_time: studyTime,
@@ -94,22 +98,19 @@ function App() {
       setStudyDate("")
       setMemo("")
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
   const updateRecord = async () => {
     try {
-      await axios.put(
-        `http://localhost:8000/study-records/${editingId}`,
-        {
-          title,
-          content,
-          study_time: studyTime,
-          study_date: studyDate,
-          memo
-        }
-      )
+      await axios.put(`${API_URL}/study-records/${editingId}`, {
+        title,
+        content,
+        study_time: studyTime,
+        study_date: studyDate,
+        memo
+      })
 
       fetchRecords()
       fetchProgress()
@@ -121,20 +122,17 @@ function App() {
       setStudyDate("")
       setMemo("")
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
   const deleteRecord = async (id: number) => {
     try {
-      await axios.delete(
-        `http://localhost:8000/study-records/${id}`
-      )
-
+      await axios.delete(`${API_URL}/study-records/${id}`)
       fetchRecords()
       fetchProgress()
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
@@ -143,62 +141,59 @@ function App() {
   // =====================
   const fetchGoals = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/study-goals")
+      const res = await axios.get(`${API_URL}/study-goals`)
       setGoals(res.data)
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
   const createGoal = async () => {
     try {
-      await axios.post("http://localhost:8000/study-goals", {
+      await axios.post(`${API_URL}/study-goals`, {
         goal_title: goalTitle,
         target_hours: targetTime,
         deadline
       })
 
       fetchGoals()
+      fetchProgress() // 目標作成時にも進捗（達成率）を再計算
 
       setGoalTitle("")
       setTargetTime(0)
       setDeadline("")
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
   const updateGoal = async () => {
     try {
-      await axios.put(
-        `http://localhost:8000/study-goals/${editingGoalId}`,
-        {
-          goal_title: goalTitle,
-          target_hours: targetTime,
-          deadline
-        }
-      )
+      await axios.put(`${API_URL}/study-goals/${editingGoalId}`, {
+        goal_title: goalTitle,
+        target_hours: targetTime,
+        deadline
+      })
 
       fetchGoals()
+      fetchProgress() // 目標更新時にも進捗を再計算
 
       setEditingGoalId(null)
       setGoalTitle("")
       setTargetTime(0)
       setDeadline("")
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
   const deleteGoal = async (id: number) => {
     try {
-      await axios.delete(
-        `http://localhost:8000/study-goals/${id}`
-      )
-
+      await axios.delete(`${API_URL}/study-goals/${id}`)
       fetchGoals()
+      fetchProgress() // 目標削除時にも進捗を再計算
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
@@ -207,22 +202,20 @@ function App() {
   // =====================
   const fetchProgress = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/progress")
+      const res = await axios.get(`${API_URL}/progress`)
       setProgress(res.data)
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
-  // =====================
-  // Calendar filter
-  // =====================
+  // カレンダーフィルター
   const filteredRecords = selectedDate
     ? records.filter((r) => r.study_date === selectedDate)
     : records
 
   // =====================
-  // UI
+  // UI (すべてのボタン・フォームを完全復活)
   // =====================
   return (
     <div>
@@ -231,7 +224,8 @@ function App() {
       {/* Progress */}
       <h2>Progress</h2>
       <p>合計: {progress.total_study_time} 分</p>
-      <p>達成率: {progress.achievement_rate.toFixed(1)} %</p>
+      {/* progress.achievement_rate がundefinedの時でも落ちないように安全に呼び出し */}
+      <p>達成率: {(progress.achievement_rate ?? 0).toFixed(1)} %</p>
 
       <hr />
 

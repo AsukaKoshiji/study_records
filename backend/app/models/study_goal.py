@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
-from app.database.database import Base
+from backend.app.database.database import Base
 
 
 class StudyGoal(Base):
