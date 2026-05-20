@@ -5,12 +5,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.main import app
-from backend.app.database.database import Base
+from backend.app.database.database import Base, SessionLocal
 from backend.app.routers.study_record import get_db
-from backend.app.models import study_record, study_goal  # ←重要
+
+# 🛑 【超重要】ここが動かない原因のすべてでした。
+# クラス名（StudyRecord, StudyGoal）まで個別に直接インポートを明示します。
+# これにより、Base.metadata.create_all を呼んだ瞬間に、SQLite上に2つのテーブルが100%強制生成されます。
+from backend.app.models.study_record import StudyRecord
+from backend.app.models.study_goal import StudyGoal
 
 # =========================================================
-# テスト用SQLite DB
+# 1. テスト用DB（SQLite in-memory）の設定
 # =========================================================
 TEST_DATABASE_URL = "sqlite://"
 
@@ -26,29 +31,22 @@ TestingSessionLocal = sessionmaker(
     bind=engine,
 )
 
-# =========================================================
-# ★ここが超重要（テーブル作成）
-# =========================================================
-Base.metadata.create_all(bind=engine)
-
 
 # =========================================================
-# 2. テーブル作成・削除（テスト全体）
+# 2. テーブル作成・削除（テスト全体で1回だけ実行）
 # =========================================================
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     """
-    テスト開始時にテーブル作成
-    テスト終了時に削除
+    テスト全体の開始時に、登録されたすべてのモデルのテーブルを生成します。
     """
-    # 登録された2つのテーブルがここで確実に作成されます
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
 
 
 # =========================================================
-# 3. DBセッション（テストごとに独立）
+# 3. DBセッション（テストケースごとに完全に独立）
 # =========================================================
 @pytest.fixture
 def db_session():
@@ -72,7 +70,7 @@ def db_session():
 @pytest.fixture
 def client(db_session):
     """
-    Depends(get_db) をテスト用DBに差し替える
+    Depends(get_db) をテスト用のクリーンなSQLiteセッションに差し替えます。
     """
     def override_get_db():
         try:
