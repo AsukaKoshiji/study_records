@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import SessionLocal
+from backend.app.database.database import SessionLocal, Base
 from backend.app.models.study_goal import StudyGoal
 from backend.app.schemas.study_goal import StudyGoalCreate, StudyGoalUpdate
 

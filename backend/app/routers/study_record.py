@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import SessionLocal
+# 🛑 ここを修正：SessionLocal を確実にインポートに追加！
+from backend.app.database.database import Base, SessionLocal
 from backend.app.models.study_goal import StudyGoal
 from backend.app.models.study_record import StudyRecord
 from backend.app.schemas.study_record import (
@@ -20,11 +21,10 @@ router = APIRouter()
 # =========================================================
 
 def get_db():
+    # 上でインポートしたことで、テスト時に conftest.py がここをSQLiteに完璧に差し替えられるようになります！
     db = SessionLocal()
-
     try:
         yield db
-
     finally:
         db.close()
 

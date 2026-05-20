@@ -1,15 +1,13 @@
-import os
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
-
+from sqlalchemy.orm import sessionmaker, declarative_base
+import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "mysql+pymysql://user:password@db:3306/study_db",
+    "mysql+pymysql://user:pass@db:3306/app"
 )
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, echo=False)
 
 SessionLocal = sessionmaker(
     autocommit=False,

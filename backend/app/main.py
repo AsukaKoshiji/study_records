@@ -1,20 +1,17 @@
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.database.database import engine, Base
+# ルーターのインポート（database や Base は main では使わないので削除してOKです）
 from backend.app.routers import study_record, study_goal
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    yield
+# アプリケーションの初期化（テーブル作成は conftest.py または本番のマイグレーションツールに任せます）
+app = FastAPI()
 
 
-app = FastAPI(lifespan=lifespan)
-
+# =========================================================
+# 1. CORSの設定
+# =========================================================
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
@@ -28,6 +25,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# =========================================================
+# 2. ルーターの登録
+# =========================================================
 app.include_router(
     study_record.router,
     prefix="/api/study-records",
@@ -44,3 +44,6 @@ app.include_router(
 @app.get("/", tags=["Root"])
 def root():
     return {"message": "Hello FastAPI"}
+
+
+

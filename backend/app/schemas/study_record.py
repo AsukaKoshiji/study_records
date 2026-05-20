@@ -2,7 +2,7 @@ from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
-
+from backend.app.database.database import Base
 
 # =========================================================
 # Base Schema
