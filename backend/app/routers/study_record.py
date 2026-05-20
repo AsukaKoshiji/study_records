@@ -7,6 +7,7 @@ from app.schemas.study_record import (
     StudyRecordCreate,
     StudyRecordUpdate
 )
+from datetime import date
 
 router = APIRouter()
 
@@ -41,11 +42,14 @@ def create_study_record(
     }
 
 
-@router.get("/study-records")
-def get_study_records(
+@router.get("/study-records/date/{study_date}")
+def get_study_records_by_date(
+    study_date: str,
     db: Session = Depends(get_db)
 ):
-    records = db.query(StudyRecord).all()
+    records = db.query(StudyRecord).filter(
+        StudyRecord.study_date == study_date
+        ).all()
 
     return records
 
