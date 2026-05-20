@@ -24,6 +24,13 @@ def get_db():
     finally:
         db.close()
 
+@router.get("/study-records")
+def get_study_records(
+    db: Session = Depends(get_db)
+):
+    records = db.query(StudyRecord).all()
+
+    return records
 
 @router.post("/study-records")
 def create_study_record(
@@ -129,7 +136,6 @@ def delete_study_record(
         "message": "study record deleted"
     }
 
-
 @router.get("/progress")
 def get_progress(
     db: Session = Depends(get_db)
@@ -141,20 +147,42 @@ def get_progress(
     if total_study_time is None:
         total_study_time = 0
 
-        goal = db.query(StudyGoal).first()
+    goal = db.query(StudyGoal).first()
 
-        if goal is None:
-            return(
-                "total_study_time": total_sstudy_time,
-                "target_hours": 0,
-                "achievement_rate": 0
-            )
-        achievement_rate = (
-            total_study_time / goal.target_hours
-            ) * 100
-
+    if goal is None:
         return {
             "total_study_time": total_study_time,
-            "target_hours": goal.target_hours,
-            "achievement_rate": round(acchievement_rate, 2)
+            "target_hours": 0,
+            "achievement_rate": 0
         }
+
+    achievement_rate = (
+        total_study_time / goal.target_hours
+    ) * 100
+
+    return {
+        "total_study_time": total_study_time,
+        "target_hours": goal.target_hours,
+        "achievement_rate": round(achievement_rate, 2)
+    }
+
+@router.get("/progress")
+def get_progress(
+    db: Session = Depends(get_db)
+):
+    records = db.query(StudyRecord).all()
+
+    total_study_time = sum(
+        record.study_time for record in records
+    )
+
+    goal_time = 2000
+
+    achievement_rate = (
+        total_study_time / goal_time
+    ) * 100
+
+    return {
+        "total_study_time": total_study_time,
+        "achievement_rate": achievement_rate
+    }

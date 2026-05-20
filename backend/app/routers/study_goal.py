@@ -101,3 +101,10 @@ def delete_study_goal(
     return {
         "message": "study goal deleted"
     }
+@router.get("/study-goals")
+def get_study_goals(
+    db: Session = Depends(get_db)
+):
+    goals = db.query(StudyGoal).all()
+
+    return goals
